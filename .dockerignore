@@ -1,0 +1,15 @@
+# Docker ignore file pour optimiser les builds
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+.gitignore
+README.md
+# .env
+.env.local
+.env.production.local
+.env.local
+.vercel
+.next
+out
