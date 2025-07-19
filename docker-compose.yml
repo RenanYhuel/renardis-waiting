@@ -1,0 +1,21 @@
+services:
+  renardis-web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NOTION_API_KEY=${NOTION_API_KEY}
+      - NOTION_CONTACT_DATABASE_ID=${NOTION_CONTACT_DATABASE_ID}
+      - NOTION_CANDIDATURE_DATABASE_ID=${NOTION_CANDIDATURE_DATABASE_ID}
+      - NOTION_VERSION=${NOTION_VERSION}
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - renardis-network
+
+networks:
+  renardis-network:
+    driver: bridge
+

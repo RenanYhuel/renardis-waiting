@@ -1,0 +1,50 @@
+name: CI/CD Deploy to Ubuntu Server
+description: Deploys the application to an Ubuntu server using SSH and Docker Compose.
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up SSH and deploy
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: 2008
+          SSH_USER: adminsys
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "🔐 Configuration de la clé SSH..."
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          echo "🔍 Ajout de la clé du serveur SSH à known_hosts..."
+          ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts
+
+          echo "🚀 Connexion au serveur et déploiement..."
+          ssh -p $SSH_PORT -o StrictHostKeyChecking=yes $SSH_USER@$SSH_HOST 'bash -s' <<'ENDSSH'
+            set -e
+            PROJECT_DIR=/opt/Renardis/renardis-waiting
+
+            if [ ! -d "$PROJECT_DIR/.git" ]; then
+              echo "Clonage initial du dépôt..."
+              git clone git@github.com:Renardis/renardis-waiting.git $PROJECT_DIR
+            fi
+
+            cd $PROJECT_DIR
+            echo "Mise à jour du dépôt..."
+            git pull origin main
+
+            echo "Redémarrage de Docker..."
+            docker compose down
+            docker compose up -d --build
+          ENDSSH
+
