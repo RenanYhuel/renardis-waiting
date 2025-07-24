@@ -127,7 +127,7 @@ export default function Home() {
           
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
             <span className="text-[#4fc3f7] whitespace-nowrap">
-              <span className="text-[#f97316]">R</span>enardis Cloud
+              <span className="text-[#f97316]">R</span>enardis 
             </span>
           </h1>
           
