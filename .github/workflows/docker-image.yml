@@ -32,7 +32,7 @@ jobs:
           echo "🚀 Connexion au serveur et déploiement..."
           ssh -p $SSH_PORT -o StrictHostKeyChecking=yes $SSH_USER@$SSH_HOST 'bash -s' <<'ENDSSH'
             set -e
-            PROJECT_DIR=/opt/Renardis/renardis-waiting
+            PROJECT_DIR=/opt/Renardis/Renardis-waiting
 
             if [ ! -d "$PROJECT_DIR/.git" ]; then
               echo "Clonage initial du dépôt..."
