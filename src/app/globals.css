@@ -2,8 +2,8 @@
 
 :root {
     --background: #00132c;
-    --foreground: #4fc3f7;
-    --accent: #f97316;
+    --foreground: #4aa8e0;
+    --accent: #f7a45a;
 }
 
 body {
@@ -27,10 +27,10 @@ body {
 @keyframes glow {
     0%,
     100% {
-        box-shadow: 0 0 20px rgba(79, 195, 247, 0.3);
+        box-shadow: 0 0 20px rgba(74, 168, 224, 0.3);
     }
     50% {
-        box-shadow: 0 0 30px rgba(79, 195, 247, 0.6);
+        box-shadow: 0 0 30px rgba(74, 168, 224, 0.6);
     }
 }
 
@@ -56,8 +56,8 @@ html {
 /* Toast customizations */
 [data-sonner-toaster] {
     --normal-bg: rgba(0, 19, 44, 0.95) !important;
-    --normal-border: rgba(79, 195, 247, 0.3) !important;
-    --normal-text: #4fc3f7 !important;
+    --normal-border: rgba(74, 168, 224, 0.3) !important;
+    --normal-text: #4aa8e0 !important;
     --success-bg: rgba(34, 197, 94, 0.1) !important;
     --success-border: rgba(34, 197, 94, 0.3) !important;
     --error-bg: rgba(239, 68, 68, 0.1) !important;
@@ -71,9 +71,9 @@ html {
 
 /* Personnalisation de la croix de fermeture */
 [data-sonner-toast] [data-close-button] {
-    background: rgba(79, 195, 247, 0.1) !important;
-    border: 1px solid rgba(79, 195, 247, 0.3) !important;
-    color: #4fc3f7 !important;
+    background: rgba(74, 168, 224, 0.1) !important;
+    border: 1px solid rgba(74, 168, 224, 0.3) !important;
+    color: #4aa8e0 !important;
     border-radius: 6px !important;
     width: 20px !important;
     height: 20px !important;
@@ -81,8 +81,8 @@ html {
 }
 
 [data-sonner-toast] [data-close-button]:hover {
-    background: rgba(79, 195, 247, 0.2) !important;
-    border-color: #4fc3f7 !important;
+    background: rgba(74, 168, 224, 0.2) !important;
+    border-color: #4aa8e0 !important;
     color: white !important;
     transform: scale(1.05) !important;
 }
