@@ -5,11 +5,11 @@ import { sendDiscordWebhook } from "@/lib/discordWebhook";
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { nom, email, message } = body;
+        const { fullName, email, phone, company, subject, message } = body;
 
-        if (!nom || !email || !message) {
+        if (!fullName || !email || !message) {
             return NextResponse.json(
-                { error: "Tous les champs requis doivent être remplis" },
+                { error: "Nom, email et message sont requis" },
                 { status: 400 }
             );
         }
@@ -22,13 +22,41 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        logger.info(`Contact reçu : ${nom} <${email}>`);
+        logger.info(`Contact reçu : ${fullName} <${email}>`);
         if (process.env.DISCORD_WEBHOOK_URL) {
             try {
+                const embed = {
+                    title: "📬 Nouveau contact Renardis",
+                    color: 0x5865f2,
+                    fields: [
+                        { name: "Nom", value: fullName, inline: true },
+                        { name: "Email", value: email, inline: true },
+                        ...(phone
+                            ? [
+                                  {
+                                      name: "Téléphone",
+                                      value: phone,
+                                      inline: true,
+                                  },
+                              ]
+                            : []),
+                        ...(company
+                            ? [
+                                  {
+                                      name: "Société",
+                                      value: company,
+                                      inline: true,
+                                  },
+                              ]
+                            : []),
+                        ...(subject ? [{ name: "Sujet", value: subject }] : []),
+                        { name: "Message", value: message },
+                    ],
+                    timestamp: new Date().toISOString(),
+                };
                 await sendDiscordWebhook("", process.env.DISCORD_WEBHOOK_URL, {
-                    nom,
-                    email,
                     username: "Renardis Notification",
+                    embed,
                 });
                 logger.info("Webhook Discord envoyé avec succès.");
             } catch (err) {
@@ -43,7 +71,11 @@ export async function POST(request: NextRequest) {
             const { sendTelegramNotification } = await import(
                 "@/lib/notifications"
             );
-            const telegramMessage = `Nouveau contact\nNom: ${nom}\nEmail: ${email}\nMessage: ${message}`;
+            let telegramMessage = `Nouveau contact\nNom: ${fullName}\nEmail: ${email}`;
+            if (phone) telegramMessage += `\nTéléphone: ${phone}`;
+            if (company) telegramMessage += `\nSociété: ${company}`;
+            if (subject) telegramMessage += `\nSujet: ${subject}`;
+            telegramMessage += `\nMessage: ${message}`;
             await sendTelegramNotification(telegramMessage);
         } catch (err) {
             logger.error("Erreur lors de l'envoi du message Telegram :", err);

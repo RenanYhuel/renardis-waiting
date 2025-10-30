@@ -1,87 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 export default function Home() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<"contact">("contact");
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
-
-    const openModal = (type: "contact") => {
-        setModalType(type);
-        setIsModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setIsSubmitting(false);
-    };
-
-    // Fermer le modal en cliquant en dehors
-    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.target === e.currentTarget) {
-            closeModal();
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-
-        const formData = new FormData(e.currentTarget);
-        const data = Object.fromEntries(formData.entries());
-
-        try {
-            const endpoint =
-                modalType === "contact" ? "/api/contact" : "/api/candidature";
-
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                // Toast de succès avec sonner
-                toast.success(result.message, {
-                    description:
-                        modalType === "contact"
-                            ? "Nous vous répondrons dans les plus brefs délais."
-                            : "Nous examinerons votre candidature attentivement.",
-                });
-
-                // Réinitialiser le formulaire
-                (e.target as HTMLFormElement).reset();
-
-                // Fermer le modal après 2 secondes
-                setTimeout(() => {
-                    closeModal();
-                }, 2000);
-            } else {
-                // Toast d'erreur
-                toast.error(result.error || "Une erreur est survenue", {
-                    description:
-                        "Veuillez vérifier vos informations et réessayer.",
-                });
-            }
-        } catch (error) {
-            console.error("Erreur lors de l'envoi:", error);
-            toast.error("Erreur de connexion", {
-                description: "Vérifiez votre connexion internet et réessayez.",
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
     const scrollToValues = () => {
         document
             .getElementById("values")
@@ -115,7 +38,7 @@ export default function Home() {
                         Nous rejoindre
                     </button>
                     <button
-                        onClick={() => openModal("contact")}
+                        onClick={() => router.push("/contact")}
                         className="text-[#4fc3f7] hover:text-white transition-colors duration-300 cursor-pointer text-sm sm:text-base font-medium"
                     >
                         Contact
@@ -245,114 +168,6 @@ export default function Home() {
                     </div>
                 </div>
             </footer>
-
-            {/* Modal */}
-            {isModalOpen && (
-                <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                    onClick={handleBackdropClick}
-                >
-                    <div className="bg-gradient-to-br from-[#00132c]/95 to-[#003F92]/95 backdrop-blur-md border border-white/20 rounded-2xl p-6 sm:p-8 max-w-md sm:max-w-lg w-full relative shadow-2xl animate-in fade-in duration-300">
-                        {/* Close button */}
-                        <button
-                            onClick={closeModal}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors duration-300 cursor-pointer p-1 rounded-full hover:bg-white/10"
-                        >
-                            <svg
-                                className="w-5 h-5 sm:w-6 sm:h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </button>
-
-                        {/* Modal content */}
-                        <div className="mb-6">
-                            <h2 className="text-xl sm:text-2xl font-bold text-[#4fc3f7] mb-2">
-                                {"Nous contacter"}
-                            </h2>
-                            <p className="text-[#4fc3f7]/70 text-sm">
-                                Une question ? Un projet ? Envie d&apos;en
-                                savoir plus ? Écrivez-nous !
-                            </p>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-[#4fc3f7] mb-2">
-                                    Nom complet *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="nom"
-                                    required
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-[#4fc3f7] placeholder-[#4fc3f7]/50 focus:outline-none focus:border-[#4fc3f7] focus:ring-2 focus:ring-[#4fc3f7]/20 transition-all duration-300 cursor-text disabled:opacity-50"
-                                    placeholder="Votre nom et prénom"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-[#4fc3f7] mb-2">
-                                    Email *
-                                </label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    required
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-[#4fc3f7] placeholder-[#4fc3f7]/50 focus:outline-none focus:border-[#4fc3f7] focus:ring-2 focus:ring-[#4fc3f7]/20 transition-all duration-300 cursor-text disabled:opacity-50"
-                                    placeholder="votre.email@exemple.com"
-                                />
-                            </div>
-
-                            {/* ...existing code... */}
-
-                            <div>
-                                <label className="block text-sm font-medium text-[#4fc3f7] mb-2">
-                                    Message *
-                                </label>
-                                <textarea
-                                    name="message"
-                                    required
-                                    rows={4}
-                                    disabled={isSubmitting}
-                                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-[#4fc3f7] placeholder-[#4fc3f7]/50 focus:outline-none focus:border-[#4fc3f7] focus:ring-2 focus:ring-[#4fc3f7]/20 transition-all duration-300 resize-none cursor-text disabled:opacity-50"
-                                    placeholder={
-                                        modalType === "contact"
-                                            ? "Décrivez votre demande ou votre projet..."
-                                            : "Parlez-nous de votre motivation à rejoindre Renardis..."
-                                    }
-                                ></textarea>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className="w-full px-6 py-3 bg-gradient-to-r from-[#4fc3f7] to-[#4fc3f7]/80 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-[#4fc3f7]/25 transition-all duration-300 hover:scale-105 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#4fc3f7]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                            >
-                                {isSubmitting
-                                    ? "Envoi en cours..."
-                                    : modalType === "contact"
-                                    ? "Envoyer le message"
-                                    : "Candidater"}
-                            </button>
-                        </form>
-
-                        <p className="text-xs text-[#4fc3f7]/60 mt-4 text-center leading-relaxed">
-                            Vos données sont traitées dans le respect de votre
-                            vie privée et des valeurs éthiques de Renardis.
-                        </p>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
