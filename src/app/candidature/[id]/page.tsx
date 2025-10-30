@@ -1,16 +1,48 @@
 import React from "react";
 import CodeEntryForm from "./CodeEntryForm";
+import { initializeOrm } from "@/server/orm";
+import { Candidate } from "@/server/entities/Candidate";
 import { Users, Award, Briefcase, Sparkles, CheckCircle } from "lucide-react";
 import NotesClientCard from "./NotesClientCard";
 
-async function fetchCandidate(id: string, code: string | null) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const url = `${baseUrl}/api/candidature/${id}${
-        code ? `?code=${code}` : ""
-    }`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    return await res.json();
+async function getCandidateFromDb(id: string, code: string | null) {
+    // Server-side: query the database directly to avoid making an HTTP request
+    const orm = await initializeOrm();
+    const repo = orm.getRepository(Candidate);
+    const candidate = await repo.findOne({
+        where: { id },
+        relations: ["cvFile"],
+    });
+    if (!candidate) return null;
+    if (!code || code !== candidate.accessCode) return null;
+    return {
+        id: candidate.id,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        email: candidate.email,
+        phone: candidate.phone,
+        linkedIn: candidate.linkedIn,
+        availability: candidate.availability,
+        specialty: candidate.specialty,
+        coverLetter: candidate.coverLetter,
+        skills: candidate.skills,
+        motivation: candidate.motivation,
+        experience: candidate.experience,
+        status: candidate.status,
+        notes: candidate.notes,
+        createdAt: candidate.createdAt,
+        cvFile: candidate.cvFile
+            ? {
+                  id: candidate.cvFile.id,
+                  filename: candidate.cvFile.filename,
+                  originalName: candidate.cvFile.originalName,
+                  mimetype: candidate.cvFile.mimetype,
+                  size: candidate.cvFile.size,
+                  hash: candidate.cvFile.hash,
+              }
+            : null,
+        accessCode: candidate.accessCode,
+    };
 }
 
 export default async function CandidatePreviewPage({
@@ -39,7 +71,7 @@ export default async function CandidatePreviewPage({
             </div>
         );
     }
-    const candidate = await fetchCandidate(id, code);
+    const candidate = await getCandidateFromDb(id, code);
     if (!candidate) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#00132c] via-[#003F92] to-[#00132c]">
