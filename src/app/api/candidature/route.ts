@@ -48,10 +48,27 @@ export async function POST(request: NextRequest) {
             contentType.includes("form")
         ) {
             const form = await request.formData();
-            let cvFile: globalThis.File | null = null;
+            // In Node runtime File may not be defined globally; detect file-like values
+            // by checking for an arrayBuffer() function and a name/type property.
+            // This avoids ReferenceError: File is not defined in some Node environments.
+            const isFileLike = (
+                v: unknown
+            ): v is {
+                arrayBuffer: () => Promise<ArrayBuffer>;
+                name?: string;
+                type?: string;
+            } =>
+                v != null &&
+                typeof v === "object" &&
+                typeof (v as { arrayBuffer?: unknown }).arrayBuffer ===
+                    "function" &&
+                ("name" in (v as object) || "type" in (v as object));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let cvFile: any | null = null;
             form.forEach((value, key) => {
-                if (value instanceof File) {
+                if (isFileLike(value)) {
                     if (key === "cv") cvFile = value;
+                    // keep the file-like object in the body for later processing
                     body[key] = value;
                 } else {
                     const v = String(value);
@@ -63,10 +80,8 @@ export async function POST(request: NextRequest) {
                 }
             });
             if (cvFile) {
-                // Read file buffer
-                const arrayBuffer = await (
-                    cvFile as globalThis.File
-                ).arrayBuffer();
+                // Read file buffer from file-like object
+                const arrayBuffer = await cvFile.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
                 // Compute SHA256 hash
                 const hash = crypto
