@@ -21,8 +21,6 @@ SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=
-NOTION_CANDIDATURE_DATABASE_ID=
-NOTION_API_KEY=
 ```
 
 3. Run dev server:
@@ -43,4 +41,4 @@ Files added:
 Notes:
 
 -   Uploaded CVs are saved in `/uploads` with anonymized UUID filenames. They are served only via `/api/admin/download` which checks JWT.
--   This is a minimal implementation to get started. Next steps: add PDF preview, richer admin actions, Notion/Sheets sync, 2FA flow and role/permissions management.
+-   This is a minimal implementation to get started. Next steps: add PDF preview, richer admin actions, Sheets sync, 2FA flow and role/permissions management.

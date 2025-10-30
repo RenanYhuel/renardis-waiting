@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Upload,
     FileText,
@@ -118,11 +118,7 @@ export default function Candidature() {
     const [isDragging, setIsDragging] = useState(false);
     const [completionScore, setCompletionScore] = useState(0);
 
-    useEffect(() => {
-        calculateCompletion();
-    }, [form, file]);
-
-    function calculateCompletion() {
+    const calculateCompletion = useCallback(() => {
         let score = 0;
         const weights = {
             firstName: 10,
@@ -135,7 +131,7 @@ export default function Candidature() {
             experience: 10,
             skills: 10,
             file: 5,
-        };
+        } as const;
 
         if (form.firstName) score += weights.firstName;
         if (form.lastName) score += weights.lastName;
@@ -149,7 +145,11 @@ export default function Candidature() {
         if (file) score += weights.file;
 
         setCompletionScore(score);
-    }
+    }, [form, file]);
+
+    useEffect(() => {
+        calculateCompletion();
+    }, [calculateCompletion]);
 
     function updateField(name: keyof CandidateForm, value: string | string[]) {
         setForm((s) => ({ ...s, [name]: value }));
@@ -275,6 +275,11 @@ export default function Candidature() {
             }
         });
         if (file) data.append("cv", file);
+
+        // Debug log: print FormData contents
+        for (const pair of data.entries()) {
+            console.log("FormData:", pair[0], pair[1]);
+        }
 
         try {
             setIsSubmitting(true);
@@ -425,26 +430,11 @@ export default function Candidature() {
 
                 {/* Main card */}
                 <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-                    {/* Error/Success messages */}
+                    {/* Error message */}
                     {error && (
                         <div className="mx-6 mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
                             <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                             <p className="text-sm text-red-300">{error}</p>
-                        </div>
-                    )}
-
-                    {success && (
-                        <div className="mx-6 mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-                            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-semibold text-green-300">
-                                    Candidature envoyée avec succès !
-                                </p>
-                                <p className="text-xs text-green-400/80 mt-1">
-                                    Nous reviendrons vers vous très
-                                    prochainement.
-                                </p>
-                            </div>
                         </div>
                     )}
 
@@ -999,7 +989,7 @@ export default function Candidature() {
                                                 Expérience
                                             </h3>
                                         </div>
-                                        <p className="text-sm text-[#4aa8e0]/80 whitespace-pre-wrap">
+                                        <p className="text-sm text-[#4aa8e0]/80 whitespace-pre-wrap leading-relaxed break-words">
                                             {form.experience}
                                         </p>
                                     </div>
@@ -1142,7 +1132,7 @@ export default function Candidature() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <a
-                                    href={previewUrl}
+                                    href={previewUrl ?? undefined}
                                     download={file?.name}
                                     className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all flex items-center gap-2 text-sm text-[#4aa8e0]"
                                 >
@@ -1151,7 +1141,9 @@ export default function Candidature() {
                                 </a>
                                 <button
                                     onClick={() => {
-                                        URL.revokeObjectURL(previewUrl);
+                                        if (previewUrl) {
+                                            URL.revokeObjectURL(previewUrl);
+                                        }
                                         setPreviewUrl(null);
                                     }}
                                     className="px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-all flex items-center gap-2 text-sm text-red-400"
@@ -1162,7 +1154,7 @@ export default function Candidature() {
                             </div>
                         </div>
                         <iframe
-                            src={previewUrl}
+                            src={previewUrl ?? undefined}
                             className="w-full h-full"
                             title="CV Preview"
                         />
@@ -1170,6 +1162,20 @@ export default function Candidature() {
                 </div>
             )}
 
+            {/* Success toast at bottom, outside main card but inside main container */}
+            {success && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-green-500/90 border border-green-500/30 rounded-xl shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2">
+                    <CheckCircle className="w-6 h-6 text-white flex-shrink-0" />
+                    <div>
+                        <p className="text-base font-semibold text-white">
+                            Candidature envoyée avec succès !
+                        </p>
+                        <p className="text-xs text-white/80 mt-1">
+                            Nous reviendrons vers vous très prochainement.
+                        </p>
+                    </div>
+                </div>
+            )}
             <style jsx>{`
                 @keyframes shimmer {
                     0% {
