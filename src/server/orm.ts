@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 import path from "path";
 import { Candidate } from "./entities/Candidate";
 import { File } from "./entities/File";
+import { RecruiterAccess } from "./entities/RecruiterAccess";
 
 const DB_DIR = path.resolve(process.cwd(), "data");
 const DB_FILE = path.join(DB_DIR, "typeorm.sqlite");
@@ -16,7 +17,7 @@ export const AppDataSource = new DataSource({
     database: DB_FILE,
     synchronize: true, // for development; consider migrations for production
     logging: false,
-    entities: [Candidate, File],
+    entities: [Candidate, File, RecruiterAccess],
 });
 
 export async function initializeOrm() {
