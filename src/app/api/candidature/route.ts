@@ -331,13 +331,34 @@ export async function POST(request: NextRequest) {
             { status: 200 }
         );
     } catch (error) {
-        logger.error("Erreur lors de l'envoi de la candidature:", error);
+        // Ensure full error object and stack are logged in production
+        try {
+            logger.error(
+                { err: error },
+                "Erreur lors de l'envoi de la candidature"
+            );
+            if (
+                error &&
+                typeof (error as unknown as Error).stack === "string"
+            ) {
+                logger.error((error as unknown as Error).stack as string);
+            }
+        } catch (logErr) {
+            // Fallback if logging the error itself fails
+            logger.error(
+                "Erreur lors de l'envoi de la candidature (échec du logging détaillé)"
+            );
+            logger.error(String(error));
+            logger.error(String(logErr));
+        }
 
         return NextResponse.json(
             {
                 error: "Erreur lors de l'envoi de la candidature. Veuillez réessayer.",
                 details:
-                    process.env.NODE_ENV === "development" ? error : undefined,
+                    process.env.NODE_ENV === "development"
+                        ? String(error)
+                        : undefined,
             },
             { status: 500 }
         );
