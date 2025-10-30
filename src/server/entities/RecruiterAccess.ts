@@ -5,7 +5,7 @@ import {
     CreateDateColumn,
 } from "typeorm";
 
-@Entity()
+@Entity("recruiter_access")
 export class RecruiterAccess {
     @PrimaryGeneratedColumn("uuid")
     id: string;

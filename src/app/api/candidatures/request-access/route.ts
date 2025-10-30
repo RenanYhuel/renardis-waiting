@@ -39,7 +39,7 @@ export async function POST(request: Request) {
             expiresAt: expiresAt.toISOString(),
         });
     } catch (err) {
-        console.error("Error creating recruiter access", err);
+        console.error("Error creating recruiter access", err?.stack || err);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }
