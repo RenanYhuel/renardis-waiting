@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import computePoW from "@/lib/powClient";
 import {
     Mail,
     Phone,
@@ -8,8 +9,8 @@ import {
     Send,
     Briefcase,
     Sparkles,
-    CheckCircle,
     AlertCircle,
+    CheckCircle,
 } from "lucide-react";
 // import { useRouter } from "next/navigation";
 
@@ -22,10 +23,16 @@ export default function ContactPage() {
         subject: "",
         message: "",
     });
+    const tsRef = React.useRef<number>(Date.now());
+    const POW_DIFFICULTY = 6; // must match server strict setting
+    const POW_CHALLENGE = "renardis-v1";
+
+    const [powProgress, setPowProgress] = useState<number>(0);
+    const [powRunning, setPowRunning] = useState(false);
+    const powCancelRef = React.useRef<(() => void) | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-    // const router = useRouter(); // Removed unused variable
 
     function updateField(name: keyof typeof form, value: string) {
         setForm((s) => ({ ...s, [name]: value }));
@@ -50,10 +57,51 @@ export default function ContactPage() {
         }
 
         try {
+            // enforce minimum submission delay (ms)
+            const elapsed = Date.now() - tsRef.current;
+            const MIN_MS = 7000;
+            if (elapsed < MIN_MS) {
+                setError(
+                    `Veuillez patienter ${Math.ceil(
+                        (MIN_MS - elapsed) / 1000
+                    )}s avant d'envoyer.`
+                );
+                setIsSubmitting(false);
+                return;
+            }
+            // attach anti-bot fields: compute PoW in a worker (non-blocking)
+            setPowProgress(0);
+            setPowRunning(true);
+            const { promise, cancel } = computePoW({
+                difficulty: POW_DIFFICULTY,
+                challenge: POW_CHALLENGE,
+                ts: tsRef.current,
+                onProgress: (attempts) => setPowProgress(attempts),
+            });
+            powCancelRef.current = cancel;
+            const pow = await promise;
+            powCancelRef.current = null;
+            setPowRunning(false);
+
+            if (!pow) {
+                setError(
+                    "Impossible de générer la preuve de travail (annulé ou échec)"
+                );
+                setIsSubmitting(false);
+                return;
+            }
+
+            const payload = {
+                ...form,
+                _hp: "", // honeypot field (should be left empty by real users)
+                ts: tsRef.current,
+                pow: JSON.stringify(pow),
+            };
+
             const res = await fetch("/api/contact", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
+                body: JSON.stringify(payload),
             });
             const json = await res.json();
             if (res.ok) {
@@ -219,6 +267,24 @@ export default function ContactPage() {
                                 )}
                             </button>
                         </div>
+                        {powRunning && (
+                            <div className="mt-4 flex items-center justify-center gap-3">
+                                <div className="text-sm text-[#4aa8e0]">
+                                    Calcul de la preuve de travail… tentatives :{" "}
+                                    {powProgress}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        powCancelRef.current?.();
+                                        setPowRunning(false);
+                                    }}
+                                    className="px-3 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-sm text-red-400"
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        )}
                     </form>
                     {success && (
                         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-green-500/90 border border-green-500/30 rounded-xl shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2">

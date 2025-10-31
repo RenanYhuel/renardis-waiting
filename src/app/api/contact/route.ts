@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import logger from "@/lib/logger";
+import { verifyAntiBot } from "@/lib/antiBot";
 import { sendDiscordWebhook } from "@/lib/discordWebhook";
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
+
+        const anti = await verifyAntiBot(request, body, {
+            max: 3, // very few submissions allowed per window
+            windowMs: 60 * 60 * 1000, // 1 hour window
+            minSubmitMs: 7000, // require at least 7s between form load and submit
+            maxSubmitMs: 10 * 60 * 1000, // tokens older than 10 minutes are rejected
+            powDifficulty: 6, // stronger PoW requirement
+            blockDurationMs: 2 * 60 * 60 * 1000, // block offenders for 2 hours
+        });
+        if (!anti.ok) {
+            logger.warn("Contact rejected by anti-bot:", anti.reason);
+            return NextResponse.json(
+                { error: "Rejeté par le système anti-spam" },
+                { status: 429 }
+            );
+        }
         const { fullName, email, phone, company, subject, message } = body;
 
         if (!fullName || !email || !message) {

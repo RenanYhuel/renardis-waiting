@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import computePoW from "@/lib/powClient";
 import {
     Upload,
     FileText,
@@ -113,6 +114,14 @@ export default function Candidature() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    // anti-bot: timestamp and POW + honeypot
+    const tsRef = React.useRef<number>(Date.now());
+    const POW_DIFFICULTY = 6; // must match server strict setting
+    const POW_CHALLENGE = "renardis-v1";
+
+    const [powProgress, setPowProgress] = useState<number>(0);
+    const [powRunning, setPowRunning] = useState(false);
+    const powCancelRef = React.useRef<(() => void) | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [step, setStep] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
@@ -266,6 +275,18 @@ export default function Candidature() {
 
         if (!validateStep(2)) return;
 
+        // enforce minimum submission delay (ms)
+        const elapsed = Date.now() - tsRef.current;
+        const MIN_MS = 7000;
+        if (elapsed < MIN_MS) {
+            setError(
+                `Veuillez patienter ${Math.ceil(
+                    (MIN_MS - elapsed) / 1000
+                )}s avant d'envoyer.`
+            );
+            return;
+        }
+
         const data = new FormData();
         Object.entries(form).forEach(([key, value]) => {
             if (Array.isArray(value)) {
@@ -283,6 +304,24 @@ export default function Candidature() {
 
         try {
             setIsSubmitting(true);
+            // attach anti-bot fields: compute PoW in a worker to avoid UI blocking
+            setPowProgress(0);
+            setPowRunning(true);
+            const { promise, cancel } = computePoW({
+                difficulty: POW_DIFFICULTY,
+                challenge: POW_CHALLENGE,
+                ts: tsRef.current,
+                onProgress: (attempts) => setPowProgress(attempts),
+            });
+            powCancelRef.current = cancel;
+            const pow = await promise;
+            powCancelRef.current = null;
+            setPowRunning(false);
+
+            data.append("_hp", "");
+            data.append("ts", String(tsRef.current));
+            if (pow) data.append("pow", JSON.stringify(pow));
+
             const res = await fetch("/api/candidature", {
                 method: "POST",
                 body: data,
@@ -1056,6 +1095,26 @@ export default function Candidature() {
                             </div>
                         )}
                     </div>
+
+                    {/* PoW progress / cancel (non-blocking) */}
+                    {powRunning && (
+                        <div className="px-6 md:px-8 pb-4 flex items-center justify-center gap-3 text-sm">
+                            <div className="text-[#4aa8e0]">
+                                Calcul de la preuve de travail… tentatives :{" "}
+                                {powProgress}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    powCancelRef.current?.();
+                                    setPowRunning(false);
+                                }}
+                                className="px-3 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-sm text-red-400"
+                            >
+                                Annuler
+                            </button>
+                        </div>
+                    )}
 
                     {/* Navigation */}
                     <div className="px-6 md:px-8 pb-6 md:pb-8 flex items-center justify-between border-t border-white/10 pt-6">

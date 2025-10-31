@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 // ...existing code...
 import logger from "@/lib/logger";
+import { verifyAntiBot } from "@/lib/antiBot";
 import { initializeOrm } from "@/server/orm";
 import { Candidate } from "@/server/entities/Candidate";
 import { File as FileEntity } from "@/server/entities/File";
@@ -119,6 +120,23 @@ export async function POST(request: NextRequest) {
         }
 
         const b = body as Record<string, unknown>;
+
+        // Ultra-strict anti-bot settings for candidature submissions
+        const anti = await verifyAntiBot(request, b, {
+            max: 3, // very few submissions allowed per window
+            windowMs: 60 * 60 * 1000, // 1 hour window
+            minSubmitMs: 7000, // require at least 7s between form load and submit
+            maxSubmitMs: 10 * 60 * 1000, // tokens older than 10 minutes are rejected
+            powDifficulty: 6, // stronger PoW requirement
+            blockDurationMs: 2 * 60 * 60 * 1000, // block offenders for 2 hours
+        });
+        if (!anti.ok) {
+            logger.warn("Candidature rejetée par anti-bot:", anti.reason);
+            return NextResponse.json(
+                { error: "Rejeté par le système anti-spam" },
+                { status: 429 }
+            );
+        }
         logger.info("Motivation reçue:", b.motivation);
         const nom = typeof b.nom === "string" ? b.nom : undefined;
         const firstName =
