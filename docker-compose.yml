@@ -5,12 +5,10 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NOTION_API_KEY=${NOTION_API_KEY}
-      - NOTION_CONTACT_DATABASE_ID=${NOTION_CONTACT_DATABASE_ID}
-      - NOTION_CANDIDATURE_DATABASE_ID=${NOTION_CANDIDATURE_DATABASE_ID}
-      - NOTION_VERSION=${NOTION_VERSION}
     env_file:
       - .env
+    volumes:
+      - ./data:/data         # ✅ dossier persistant et accessible en écriture
     restart: unless-stopped
     networks:
       - renardis-network
@@ -18,4 +16,3 @@ services:
 networks:
   renardis-network:
     driver: bridge
-
