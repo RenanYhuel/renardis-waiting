@@ -3,15 +3,18 @@
 // Configuration is hard-coded by design for local testing (no environment variables).
 // Edit the constants below to change behavior.
 
-const NEXT_PUBLIC_BASE_URL = "http://localhost:3000"; // base URL of your running app
+// Pre-production target (hard-coded for testing)
+const NEXT_PUBLIC_BASE_URL = "https://renardis-waiting.renanyh.fr"; // pre-prod base URL to test
 const TARGET_PATH = "/api/contact"; // endpoint to target
-const totalRequests = 10000; // total requests to send
-const concurrency = 4; // concurrent requests
-const difficulty = 6; // PoW difficulty (lower -> faster)
-const maxAttempts = 10000000; // max nonce attempts per PoW solver
+// Harder test configuration (edit carefully — high difficulty is CPU intensive)
+const totalRequests = 60; // total requests to send
+const concurrency = 8; // concurrent requests
+const difficulty = 6; // PoW difficulty (6 is significantly heavier than 5)
+const maxAttempts = 50000000; // max nonce attempts per PoW solver
 const os = require("os");
 const cpuCount = os.cpus ? os.cpus().length : 2;
-const workerCount = Math.max(1, Math.min(cpuCount, 4));
+// Cap workers (threads) to avoid overloading the machine; uses up to 8 threads.
+const workerCount = Math.max(1, Math.min(cpuCount, 8));
 
 const url = NEXT_PUBLIC_BASE_URL.replace(/\/$/, "") + TARGET_PATH;
 
